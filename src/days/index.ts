@@ -1,4 +1,5 @@
 export * as day01 from './01'
+export * as day02 from './02'
 
 export interface Test {
     input: string

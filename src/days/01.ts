@@ -1,35 +1,25 @@
 import { Test } from '.';
 
-const countIncreasing = (acc: number, curr: number, index: number, array: number[]) => {
-  if (index === 0) return acc;
-  if (curr > array[index - 1]) return acc + 1;
+const countIncreasing = (acc: number, curr: number, index: number, array: number[], offset: number) => {
+    if (index < offset) return acc;
+    if (curr > array[index - offset]) return acc + 1;
 
-  return acc;
+    return acc;
 };
 
-const mergeTriples = (number: number, index: number, array: number[]) => {
-  if (index < 2) return null;
+const solve = (inputString: string, offset: number) => {
+    const numbers = inputString.split('\n').map(Number);
+    const increasing = numbers.reduce((acc, curr, index, array) => countIncreasing(acc, curr, index, array, offset), 0);
 
-  return number + array[index - 1] + array[index - 2];
+    return increasing;
 };
 
-export const first = (inputString: string) => {
-  const numbers = inputString.split('\n').map(Number);
-  const increasing = numbers.reduce(countIncreasing, 0);
+export const first = (inputString: string) => solve(inputString, 1);
 
-  return increasing;
-};
-
-export const second = (inputString: string) => {
-  const numbers = inputString.split('\n').map(Number);
-  const triples = numbers.map(mergeTriples).filter(Boolean);
-  const increasing = triples.reduce(countIncreasing, 0);
-
-  return increasing;
-};
+export const second = (inputString: string) => solve(inputString, 3);
 
 export const tests: Test[] = [{
-  input: `199
+    input: `199
   200
   208
   210
@@ -39,10 +29,10 @@ export const tests: Test[] = [{
   269
   260
   263`,
-  results: {
-    first: 7,
-    second: 5,
-  },
+    results: {
+        first: 7,
+        second: 5,
+    },
 }];
 
 export const input = `199
