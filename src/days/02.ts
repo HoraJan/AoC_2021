@@ -13,16 +13,9 @@ const solve = (inputString: string) => {
         if (direction === 'forward') {
             x += Number(speed)
             depth += aim * Number(speed)
-            return
         }
-        if (direction === 'down') {
-            aim += Number(speed)
-            return
-        }
-        if (direction === 'up') {
-            aim -= Number(speed)
-            return
-        }
+        if (direction === 'down') aim += Number(speed)
+        if (direction === 'up') aim -= Number(speed)
     })
     return { x, depth, aim }
 }
