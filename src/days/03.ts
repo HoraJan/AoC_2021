@@ -1,68 +1,55 @@
 import { Test } from '.';
 
 const findMostCommonBits = (inputNumbers: string[], keepZero: boolean = false) => {
-    const numbers = [...inputNumbers]
-    const result: number[] = numbers.shift().split('').map(i => {
-        if (i === '1') return 1
+  const numbers = ([...inputNumbers]).map((i) => i.split(''));
+  const result: number[] = numbers.shift().map(Number).map((i) => (i ? 1 : -1));
+  numbers.forEach((number) => {
+    number.map(Number).forEach((digit, index) => {
+      if (digit) {
+        result[index] += 1;
+        return;
+      }
 
-        return -1
-    })
+      result[index] -= 1;
+    });
+  });
+  const min = keepZero ? -1 : 0;
 
-    numbers.forEach(number => {
-        const digits = number.split('')
-        digits.map(Number).forEach((digit, index) => {
-            if (digit)
-                return result[index] += 1
-
-            result[index] -= 1
-        })
-
-    })
-
-    const min = keepZero ? -1 : 0
-
-    return result.map(digit => {
-        if (digit > min) return 1
-
-        return 0
-    })
-}
+  return result.map((digit) => ((digit > min) ? 1 : 0));
+};
 
 const filterByMostCommonBit = (inputString: string, most: boolean = true) => {
-    let numbers = inputString.split('\n')
-    let currentIndex = 0
-    while (numbers.length > 1) {
-        const result = findMostCommonBits(numbers, true)
-        numbers = numbers.filter(number => {
-            if (most)
-                return Number(number[currentIndex]) === result[currentIndex]
-
-            return Number(number[currentIndex]) !== result[currentIndex]
-
-        })
-        currentIndex++
-    }
-    return numbers[0]
-}
+  let numbers = inputString.split('\n');
+  let currentIndex = 0;
+  while (numbers.length > 1) {
+    const result = findMostCommonBits(numbers, true);
+    numbers = numbers.filter((number) => (
+      most
+        ? Number(number[currentIndex]) === result[currentIndex]
+        : Number(number[currentIndex]) !== result[currentIndex]));
+    currentIndex += 1;
+  }
+  return numbers[0];
+};
 
 export const first = (inputString: string) => {
-    const numbers = inputString.split('\n')
-    const result = findMostCommonBits(numbers)
-    const gammaRate = parseInt(result.join(''), 2)
-    const epsilonRate = parseInt(result.map(i => { return i ? 0 : 1 }).join(''), 2)
+  const numbers = inputString.split('\n');
+  const result = findMostCommonBits(numbers);
+  const gammaRate = parseInt(result.join(''), 2);
+  const epsilonRate = parseInt(result.map((i) => (i ? 0 : 1)).join(''), 2);
 
-    return gammaRate * epsilonRate
+  return gammaRate * epsilonRate;
 };
 
 export const second = (inputString: string) => {
-    const o2rating = parseInt(filterByMostCommonBit(inputString), 2)
-    const co2rating = parseInt(filterByMostCommonBit(inputString, false), 2)
+  const o2rating = parseInt(filterByMostCommonBit(inputString), 2);
+  const co2rating = parseInt(filterByMostCommonBit(inputString, false), 2);
 
-    return o2rating * co2rating
+  return o2rating * co2rating;
 };
 
 export const tests: Test[] = [{
-    input: `00100
+  input: `00100
 11110
 10110
 10111
@@ -74,10 +61,10 @@ export const tests: Test[] = [{
 11001
 00010
 01010`,
-    results: {
-        first: 198,
-        second: 230,
-    },
+  results: {
+    first: 198,
+    second: 230,
+  },
 }];
 
 export const input = `101001011000

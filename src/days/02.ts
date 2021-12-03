@@ -1,48 +1,48 @@
 import { Test } from '.';
 
 const solve = (inputString: string) => {
-    let x = 0;
-    let depth = 0;
-    let aim = 0;
+  let x = 0;
+  let depth = 0;
+  let aim = 0;
 
-    const commands = inputString.split('\n')
-    commands.forEach(command => {
-        const commandRegexp = /(?<direction>forward|down|up) (?<speed>\d*)/
-        const { direction, speed } = command.match(commandRegexp).groups
+  const commands = inputString.split('\n');
+  commands.forEach((command) => {
+    const commandRegexp = /(?<direction>forward|down|up) (?<speed>\d*)/;
+    const { direction, speed } = command.match(commandRegexp).groups;
 
-        if (direction === 'forward') {
-            x += Number(speed)
-            depth += aim * Number(speed)
-        }
-        if (direction === 'down') aim += Number(speed)
-        if (direction === 'up') aim -= Number(speed)
-    })
-    return { x, depth, aim }
-}
+    if (direction === 'forward') {
+      x += Number(speed);
+      depth += aim * Number(speed);
+    }
+    if (direction === 'down') aim += Number(speed);
+    if (direction === 'up') aim -= Number(speed);
+  });
+  return { x, depth, aim };
+};
 
 export const first = (inputString: string) => {
-    const { x, aim } = solve(inputString)
+  const { x, aim } = solve(inputString);
 
-    return x * aim
+  return x * aim;
 };
 
 export const second = (inputString: string) => {
-    const { x, depth } = solve(inputString)
+  const { x, depth } = solve(inputString);
 
-    return x * depth
+  return x * depth;
 };
 
 export const tests: Test[] = [{
-    input: `forward 5
+  input: `forward 5
 down 5
 forward 8
 up 3
 down 8
 forward 2`,
-    results: {
-        first: 150,
-        second: 900,
-    },
+  results: {
+    first: 150,
+    second: 900,
+  },
 }];
 
 export const input = `forward 8

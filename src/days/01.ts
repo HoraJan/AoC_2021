@@ -1,17 +1,26 @@
 import { Test } from '.';
 
-const countIncreasing = (acc: number, curr: number, index: number, array: number[], offset: number) => {
-    if (index < offset) return acc;
-    if (curr > array[index - offset]) return acc + 1;
+const countIncreasing = (
+  acc: number,
+  curr: number,
+  index: number,
+  array: number[],
+  offset: number,
+) => {
+  if (index < offset) return acc;
+  if (curr > array[index - offset]) return acc + 1;
 
-    return acc;
+  return acc;
 };
 
 const solve = (inputString: string, offset: number) => {
-    const numbers = inputString.split('\n').map(Number);
-    const increasing = numbers.reduce((acc, curr, index, array) => countIncreasing(acc, curr, index, array, offset), 0);
+  const numbers = inputString.split('\n').map(Number);
+  const increasing = numbers.reduce(
+    (acc, curr, index, array) => countIncreasing(acc, curr, index, array, offset),
+    0,
+  );
 
-    return increasing;
+  return increasing;
 };
 
 export const first = (inputString: string) => solve(inputString, 1);
@@ -19,7 +28,7 @@ export const first = (inputString: string) => solve(inputString, 1);
 export const second = (inputString: string) => solve(inputString, 3);
 
 export const tests: Test[] = [{
-    input: `199
+  input: `199
   200
   208
   210
@@ -29,10 +38,10 @@ export const tests: Test[] = [{
   269
   260
   263`,
-    results: {
-        first: 7,
-        second: 5,
-    },
+  results: {
+    first: 7,
+    second: 5,
+  },
 }];
 
 export const input = `199
