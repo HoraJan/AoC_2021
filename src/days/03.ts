@@ -1,6 +1,6 @@
 import { Test } from '.';
 
-const findMostCommonBits = (inputNumbers: string[], keepZero: boolean = false) => {
+const findMostCommonBits = (inputNumbers: string[], keepZero = false) => {
   const numbers = ([...inputNumbers]).map((i) => i.split(''));
   const result: number[] = numbers.shift().map(Number).map((i) => (i ? 1 : -1));
   numbers.forEach((number) => {
@@ -18,7 +18,7 @@ const findMostCommonBits = (inputNumbers: string[], keepZero: boolean = false) =
   return result.map((digit) => ((digit > min) ? 1 : 0));
 };
 
-const filterByMostCommonBit = (inputString: string, most: boolean = true) => {
+const filterByMostCommonBit = (inputString: string, most = true) => {
   let numbers = inputString.split('\n');
   let currentIndex = 0;
   while (numbers.length > 1) {
