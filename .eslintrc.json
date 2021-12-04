@@ -1,28 +1,11 @@
 {
-  "env": {
-    "browser": true,
-    "es2021": true
-  },
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended"
   ],
-  "parser": "@typescript-eslint/parser",
-  "parserOptions": {
-    "ecmaVersion": 13,
-    "sourceType": "module"
-  },
-  "plugins": ["@typescript-eslint"],
-  "rules": {
-    "no-console": 0,
-    "import/extensions": 0
-  },
-  "settings": {
-    "import/resolver": {
-      "node": {
-        "extensions": [".ts"]
-      }
-    }
-  }
+  "rules": {}
 }
