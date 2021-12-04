@@ -13,35 +13,37 @@ const winCombinations = [
   [4, 9, 14, 19, 24]
 ]
 
-const prepare = (inputString: string) => {
+const sortBoards = (inputString: string) => {
   const sets = inputString.split('\n\n')
   const [drawnNumbersRow, ...boardLines] = sets
-  const originalDrawnNumbers = drawnNumbersRow.split(',')
-  const boards = boardLines.map(board => board.replace(/\n/g, ' ').trim().replace(/\s+/g, ',').split(','))
+  const drawnNumbers = drawnNumbersRow.split(',')
+  let boards = boardLines.map(board => board.replace(/\n/g, ' ').trim().replace(/\s+/g, ',').split(','))
 
-  return { boards, originalDrawnNumbers }
-}
+  const wonBoards: {
+    winNumber: string,
+    board: string[]
+  }[] = []
 
-const getWinBoards = (drawnNumbers: string[], boards: string[][]) => {
-  let winBoards: string[][]
-  let win = false
-  let currentNumber: string
+  drawnNumbers.find(currentNumber => {
+    boards = boards
+      .map(board => board.map(number => {
+        return number === currentNumber ? 'X' : number
+      }))
+      .filter(board => {
+        const isWon = !!winCombinations.find(combination => {
+          return combination.every(index => board[index] === 'X')
+        })
 
-  while (!win) {
-    currentNumber = drawnNumbers.shift()
-    boards = boards.map(board => board.map(number => {
-      return number === currentNumber ? 'X' : number
-    }))
+        if (!isWon) return true
 
-    winBoards = boards.filter(board => {
-      return !!winCombinations.find(combination => {
-        return combination.every(index => board[index] === 'X')
+        wonBoards.push({ board: [...board], winNumber: currentNumber })
+        return false
       })
-    })
-    win = !!winBoards.length
-  }
 
-  return { winBoards, drawnNumbers, currentNumber, boards }
+    return !boards.length
+  })
+
+  return wonBoards
 }
 
 const countResponse = (winBoard: string[], currentNumber: string) => {
@@ -54,28 +56,17 @@ const countResponse = (winBoard: string[], currentNumber: string) => {
 }
 
 export const first = (inputString: string) => {
-  const { boards, originalDrawnNumbers } = prepare(inputString)
-  const { winBoards, currentNumber } = getWinBoards(originalDrawnNumbers, boards)
+  const sortedBoards = sortBoards(inputString)
+  const firstWonBoard = sortedBoards.shift()
 
-  return countResponse(winBoards[0], currentNumber);
+  return countResponse(firstWonBoard.board, firstWonBoard.winNumber);
 };
 
 export const second = (inputString: string) => {
-  let { boards, originalDrawnNumbers: drawnNumbers } = prepare(inputString)
-  let winBoards: string[][]
-  let currentNumber: string
+  const sortedBoards = sortBoards(inputString)
+  const lastWonBoard = sortedBoards.pop()
 
-  while (boards.length > 0) {
-    const { winBoards: wb, drawnNumbers: dn, currentNumber: cn, boards: b } = getWinBoards(drawnNumbers, boards)
-    winBoards = wb
-    drawnNumbers = dn
-    currentNumber = cn
-    boards = b.filter(board => {
-      return !winBoards.includes(board)
-    })
-  }
-
-  return countResponse(winBoards[0], currentNumber);
+  return countResponse(lastWonBoard.board, lastWonBoard.winNumber);
 };
 
 export const tests: Test[] = [{
