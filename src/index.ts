@@ -32,4 +32,5 @@ try {
   });
 } catch (err) {
   console.error(red, err.message);
+  console.log(err)
 }

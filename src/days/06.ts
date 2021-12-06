@@ -1,53 +1,46 @@
 import { Test } from '.';
 
-const sixteenDays = {
-  '0': [5, 7, 0, 2, 0],
-  '1': [6, 1, 8, 1, 3],
-  '2': [0, 2, 2, 4],
-  '3': [1, 3, 3, 5],
-  '4': [2, 4, 4, 6],
-  '5': [3, 5, 5, 7],
-  '6': [4, 6, 6, 8],
-  '7': [5, 7, 0],
-  '8': [6, 1, 8]
+const singleDay = (day: string) => {
+  if (day === '0') return ['6', '8']
+  return [(Number(day) - 1).toString()]
 }
 
-interface SixteenDays {
+interface SingleDay {
   [key: string]: {
     count: number
     array: string[]
   }
 }
 
-const solveSixteenDays = (inputSixteenDays: SixteenDays) => {
+const solveSingleDay = (inputSingleDay: SingleDay) => {
   const response = {}
-  Object.entries(inputSixteenDays).forEach(([number, obj]) => {
-    obj.array = sixteenDays[number]
+  Object.entries(inputSingleDay).forEach(([number, obj]) => {
+    obj.array = singleDay(number)
     obj.array.forEach(age => {
       if (response[age]) {
         response[age].count += obj.count
         return
       }
-      response[age] = { count: obj.count, array: sixteenDays[age] }
+      response[age] = { count: obj.count, array: singleDay(age) }
     })
   })
   return response
 }
 
 const solve = (inputString: string, rounds: number) => {
-  const ages = inputString.split(',').map(Number)
+  const ages = inputString.split(',')
 
-  let response: SixteenDays = {}
+  let response: SingleDay = {}
   ages.forEach(age => {
     if (response[age]) {
       response[age].count += 1
       return
     }
-    response[age] = { count: 1, array: sixteenDays[age] }
+    response[age] = { count: 1, array: singleDay(age) }
   })
 
   for (let i = 0; i < rounds - 1; i++) {
-    response = solveSixteenDays(response)
+    response = solveSingleDay(response)
   }
 
   return Object.values(response).reduce((acc, curr) => {
@@ -56,11 +49,11 @@ const solve = (inputString: string, rounds: number) => {
 }
 
 export const first = (inputString: string) => {
-  return solve(inputString, 5)
+  return solve(inputString, 80)
 }
 
 export const second = (inputString: string) => {
-  return solve(inputString, 16)
+  return solve(inputString, 256)
 }
 
 export const tests: Test[] = [
