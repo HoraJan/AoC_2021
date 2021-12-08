@@ -1,56 +1,47 @@
 import { Test } from '.';
 
-
 export const first = (inputString: string) => {
   const lines = inputString.split('\n')
+  const allUniqueDigits = lines.flatMap(line => {
+    const [, digitsString] = line.split('|')
+    return digitsString.trim().split(' ')
+  }).map(digitString => digitString.length).filter(length => length !== 5 && length !== 6)
 
-  const words = lines.flatMap(line => {
-    const { first, second, thrid, fourth } = line.match(/.*\|\s(?<first>\w*)\s(?<second>\w*)\s(?<thrid>\w*)\s(?<fourth>\w*)/).groups
-    return [first, second, thrid, fourth]
-  }).map(word => word.length)
-
-  return words.reduce((acc, curr) => {
-    if (curr < 5 || curr > 6) return acc + 1
-    return acc
-  }, 0)
+  return allUniqueDigits.length
 }
 
 export const second = (inputString: string) => {
   const lines = inputString.split('\n')
 
   const lineSums = lines.map(line => {
-    const [all, rest] = line.split('|')
-    const digits = all.trim().split(' ')
+    const [recipes, digitsString] = line.split('|')
+    const digitRecipes = recipes.trim().split(' ').map(recipe => recipe.split('').sort().join(''))
     const digitsMap = {}
 
-    const seven = digits.find(digit => digit.length === 3).split('').sort().join('')
-    const one = digits.find(digit => digit.length === 2).split('').sort().join('')
-    const eight = digits.find(digit => digit.length === 7).split('').sort().join('')
-    const four = digits.find(digit => digit.length === 4).split('').sort().join('')
-    // const a = seven.split('').find(char => !one.split('').includes(char))
-    const six = digits.filter(digit => digit.length === 6).find(digit => {
-      const isMissingCorG = digit.split('').filter(char => !one.split('').includes(char)).length
-      return isMissingCorG === 5
-    }).split('').sort().join('')
-    const c = eight.split('').find(char => !six.split('').includes(char))
-    const f = one.split('').find(char => char !== c)
-    const three = digits.filter(digit => digit.length === 5).find(digit =>
-      digit.split('').filter(char => char === c || char === f).length === 2
-    ).split('').sort().join('')
-    const two = digits.filter(digit => digit.length === 5).find(digit =>
-      digit.split('').filter(char => char === f).length === 0
-    ).split('').sort().join('')
-    const five = digits.filter(digit => digit.length === 5).find(digit =>
-      digit.split('').filter(char => char === c).length === 0
-    ).split('').sort().join('')
-    const nine = digits.filter(digit => digit.length === 6).find(digit =>
+    const seven = digitRecipes.find(recipe => recipe.length === 3)
+    const one = digitRecipes.find(digit => digit.length === 2)
+    const eight = digitRecipes.find(digit => digit.length === 7)
+    const four = digitRecipes.find(digit => digit.length === 4)
+    const six = digitRecipes.filter(digit => digit.length === 6).find(digit =>
+      digit.split('').filter(char => !one.split('').includes(char)).length === 5
+    )
+    const cSegment = eight.split('').find(char => !six.split('').includes(char))
+    const fSegment = one.split('').find(char => char !== cSegment)
+    const three = digitRecipes.filter(digit => digit.length === 5).find(digit =>
+      digit.split('').filter(char => char === cSegment || char === fSegment).length === 2
+    )
+    const two = digitRecipes.filter(digit => digit.length === 5).find(digit =>
+      digit.split('').filter(char => char === fSegment).length === 0
+    )
+    const five = digitRecipes.filter(digit => digit.length === 5).find(digit =>
+      digit.split('').filter(char => char === cSegment).length === 0
+    )
+    const nine = digitRecipes.filter(digit => digit.length === 6).find(digit =>
       digit.split('').every(char => five.split('').includes(char) || three.split('').includes(char))
-    ).split('').sort().join('')
-    const zero = digits.filter(digit => digit.length === 6).find(digit => {
-      console.log(digit)
-      return digit.split('').sort().join('') !== six && digit.split('').sort().join('') !== nine
-    }
-    ).split('').sort().join('')
+    )
+    const zero = digitRecipes.filter(digit => digit.length === 6).find(digit =>
+      digit !== six && digit !== nine
+    )
     digitsMap[zero] = 0
     digitsMap[one] = 1
     digitsMap[two] = 2
@@ -62,13 +53,9 @@ export const second = (inputString: string) => {
     digitsMap[eight] = 8
     digitsMap[nine] = 9
 
-    const readDigits = rest.trim().split(' ')
-    const result = readDigits.map(digit => digitsMap[digit.split('').sort().join('')]).join('')
-    if (result.length != 4) {
-      console.log(result, readDigits, digitsMap)
-      throw new Error()
-    }
-    console.log(result)
+    const readDigits = digitsString.trim().split(' ').map(recipe => recipe.split('').sort().join(''))
+    const result = readDigits.map(digit => digitsMap[digit]).join('')
+
     return +result
   })
 
