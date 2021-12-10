@@ -9,43 +9,48 @@ const isNumber = (input: number | undefined) => {
 export const first = (inputString: string) => {
   const array = inputString.split('\n').map(line => line.split('').map(Number))
 
-  return array.reduce((acc, line, ind) => {
-    return acc + line.reduce((lineAcc, lineCurr, lineInd) => {
-      const up = isNumber(array[ind - 1]?.[lineInd])
-      const down = isNumber(array[ind + 1]?.[lineInd])
-      const left = isNumber(array[ind][lineInd - 1])
-      const right = isNumber(array[ind][lineInd + 1])
-      const lowest = lineCurr < up && lineCurr < down && lineCurr < left && lineCurr < right
+  return array.reduce((lineAcc, lineCurr, lineIndex) =>
+    lineCurr.reduce((pointAcc, pointCurr, pointIndex) => {
+      const up = isNumber(array[lineIndex - 1]?.[pointIndex])
+      const down = isNumber(array[lineIndex + 1]?.[pointIndex])
+      const left = isNumber(array[lineIndex][pointIndex - 1])
+      const right = isNumber(array[lineIndex][pointIndex + 1])
+      const lowest = pointCurr < up && pointCurr < down && pointCurr < left && pointCurr < right
 
-      return lineAcc + (lowest ? lineCurr + 1 : 0)
-    }, 0)
-  }, 0)
+      return pointAcc + (lowest ? pointCurr + 1 : 0)
+    }, lineAcc)
+    , 0)
 }
 
 export const second = (inputString: string) => {
   const array: (number | string)[][] = inputString.split('\n').map(line => line.split('').map(i => i === '9' ? '█' : '.'))
-  let currentIndex = 0
+  let currentBasinIndex = 0
 
   array.forEach((line, lineIndex) => {
     return line.forEach((point, pointIndex) => {
+      // if wall, do nothing
       if (point === '█') return
 
+      // if above is number, mark with same index
       if (array[lineIndex - 1]?.[pointIndex] && array[lineIndex - 1]?.[pointIndex] !== '█') {
         array[lineIndex][pointIndex] = array[lineIndex - 1]?.[pointIndex]
         return
       }
 
+      // if left is number, mark with same index
       if (array[lineIndex][pointIndex - 1] && array[lineIndex][pointIndex - 1] !== '█') {
         array[lineIndex][pointIndex] = array[lineIndex][pointIndex - 1]
         return
       }
 
-      currentIndex += 1
-      array[lineIndex][pointIndex] = currentIndex
+      // otherwise use new index
+      currentBasinIndex += 1
+      array[lineIndex][pointIndex] = currentBasinIndex
       return
     })
   })
 
+  // if 2 neighbor cells have different index, unify
   for (let i = 0; i < array.length; i++) {
     for (let j = 1; j < array[i].length; j++) {
       if (array[i][j - 1] === '█' || array[i][j] === '█') continue
@@ -61,11 +66,9 @@ export const second = (inputString: string) => {
       })
     }
   }
-
-  const sum = {}
-
   // console.log(array.map(line => line.map((a: number | '█') => a === '█' ? '█' : String.fromCharCode(a % 3 + 176)).join('')))
 
+  const sum = []
   array.forEach((line) => {
     line.forEach((point) => {
       if (point === '█') return
@@ -78,7 +81,7 @@ export const second = (inputString: string) => {
     })
   })
 
-  const values: number[] = Object.values<number>(sum).sort((a: number, b: number) => b - a)
+  const values: number[] = sum.sort((a: number, b: number) => b - a)
 
   return values[0] * values[1] * values[2]
 }
