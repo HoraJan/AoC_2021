@@ -29,7 +29,6 @@ const removeComplete = (line: string) => {
 
 export const first = (inputString: string) => {
   const lines = inputString.split('\n')
-
   const sum = lines
     .map(removeComplete)
     .filter(({ illegal }) => !!illegal)
@@ -40,18 +39,17 @@ export const first = (inputString: string) => {
 
 export const second = (inputString: string) => {
   const lines = inputString.split('\n')
-
   const sum = lines
     .map(removeComplete)
     .filter(({ illegal }) => !illegal)
     .map(({ rest }) =>
       rest
         .split('')
-        .reverse()
-        .reduce((acc, curr) => acc * 5 + incompletePoints[curr], 0)
+        .reduceRight((acc, curr) => acc * 5 + incompletePoints[curr], 0)
     )
   sum.sort((a, b) => b - a)
   const middle = Math.floor(sum.length / 2)
+
   return sum[middle]
 }
 
