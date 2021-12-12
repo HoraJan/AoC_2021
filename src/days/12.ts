@@ -18,7 +18,7 @@ const findRepeat = (caves: string[], possibleRepeat?: boolean) => {
 }
 
 const isWayPossible = (way: string[], finishedWays: string[][], possibleRepeat?: boolean) => {
-  const lastStep = way.slice(-1)[0]
+  const [lastStep] = way.slice(-1)
 
   if (lastStep === START) {
     finishedWays.push(way)
@@ -29,9 +29,9 @@ const isWayPossible = (way: string[], finishedWays: string[][], possibleRepeat?:
     return false
   }
 
-  const isCaveSmall = !!lastStep[0].match(/[a-z]/)
-  const isPossibleToVisit = findRepeat(way, possibleRepeat)
-  if (isCaveSmall && isPossibleToVisit) {
+  const isCaveSmall = lastStep[0].match(/[a-z]/)
+  const isNotPossibleToVisit = findRepeat(way, possibleRepeat)
+  if (isCaveSmall && isNotPossibleToVisit) {
     return false
   }
 
@@ -53,11 +53,11 @@ const solve = (inputString: string, possibleRepeat?: boolean) => {
   let possibleWays = [[END]]
   while (possibleWays.length > 0) {
     possibleWays = possibleWays.flatMap(way => {
-      const lastStep = way.pop()
-      return graph[lastStep].map(newStep => ([...way, lastStep, newStep]))
+      const [lastStep] = way.slice(-1)
+      return graph[lastStep]
+        .filter(newStep => isWayPossible([...way, newStep], finishedWays, possibleRepeat))
+        .map(newStep => ([...way, newStep]))
     })
-
-    possibleWays = possibleWays.filter(way => isWayPossible(way, finishedWays, possibleRepeat))
   }
 
   return finishedWays.length
