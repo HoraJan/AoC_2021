@@ -2,7 +2,7 @@ import { Test } from '.';
 const START = 'start'
 const END = 'end'
 
-const findRepeate = (caves: string[], possibleRepeat?: boolean) => {
+const findRepeat = (caves: string[], possibleRepeat?: boolean) => {
   const smallCaves = caves.filter(cave => cave !== END && cave !== START && cave[0].match(/[a-z]/))
   const exists = {}
 
@@ -30,7 +30,7 @@ const isWayPossible = (way: string[], finishedWays: string[][], possibleRepeat?:
   }
 
   const isCaveSmall = !!lastStep[0].match(/[a-z]/)
-  const isPossibleToVisit = findRepeate(way, possibleRepeat)
+  const isPossibleToVisit = findRepeat(way, possibleRepeat)
   if (isCaveSmall && isPossibleToVisit) {
     return false
   }
