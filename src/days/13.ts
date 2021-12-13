@@ -21,9 +21,9 @@ const foldByAxis = (direction: 'x' | 'y', coordinate: number, dots: number[][]) 
 const fold = (direction: 'x' | 'y', coordinateString: string, dots: number[][]) => {
   const coordinate = Number(coordinateString)
   const folded = foldByAxis(direction, coordinate, dots)
-  const clearedDots = folded.map(dot => dot.join(',')).filter((dot, index, array) => array.indexOf(dot) === index)
+  const uniqueDots = folded.map(dot => dot.join(',')).filter((dot, index, array) => array.indexOf(dot) === index)
 
-  return clearedDots.map(line => line.split(',').map(Number))
+  return uniqueDots.map(line => line.split(',').map(Number))
 }
 
 export const first = (inputString: string) => {
@@ -47,7 +47,7 @@ export const second = (inputString: string) => {
   const result = new Array(50).fill([]).map(() => new Array(50).fill(' '))
 
   dots.forEach(([x, y]) => {
-    result[y][x] = '#'
+    result[y][x] = '█'
   });
   console.log(result.map(line => line.join('')).filter(line => line.trim().length))
 
