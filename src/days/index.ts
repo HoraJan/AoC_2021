@@ -10,6 +10,7 @@ export * as day09 from './09';
 export * as day10 from './10';
 export * as day11 from './11';
 export * as day12 from './12';
+export * as day13 from './13';
 
 export interface Test {
     input: string
