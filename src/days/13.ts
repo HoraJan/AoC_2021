@@ -21,12 +21,7 @@ const foldByAxis = (direction: 'x' | 'y', coordinate: number, dots: number[][]) 
 const fold = (direction: 'x' | 'y', coordinateString: string, dots: number[][]) => {
   const coordinate = Number(coordinateString)
   const folded = foldByAxis(direction, coordinate, dots)
-
-  const foldedDots = folded.sort(([ax, ay], [bx, by]) => {
-    if (ax === bx) return ay - by
-    return ax - bx
-  })
-  const clearedDots = foldedDots.map(dot => dot.join(',')).filter((dot, index, array) => array.indexOf(dot) === index)
+  const clearedDots = folded.map(dot => dot.join(',')).filter((dot, index, array) => array.indexOf(dot) === index)
 
   return clearedDots.map(line => line.split(',').map(Number))
 }
@@ -35,7 +30,6 @@ export const first = (inputString: string) => {
   const [dotString, foldInstruction] = inputString.split('\n\n')
   const dots = dotString.split('\n').map(line => line.split(',').map(Number))
   const [firstFold] = foldInstruction.split('\n').map(line => line.replace('fold along ', '').split('='))
-
   const foldedDots = fold(firstFold[0] as 'x' | 'y', firstFold[1], dots)
 
   return foldedDots.length
