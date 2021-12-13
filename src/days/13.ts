@@ -1,71 +1,63 @@
 import { Test } from '.';
 
-export const first = (inputString: string) => {
-  const [dotString, foldInntruction] = inputString.split('\n\n')
-  let dots: any = dotString.split('\n').map(line => line.split(',').map(Number))
-
-  const folds = foldInntruction.split('\n').map(line => line.replace('fold along ', '').split('='))
-
-  folds.slice(0, 1).forEach(([direction, coordinateString]) => {
-    const coordinate = Number(coordinateString)
-    if (direction === 'y') {
-      dots = dots.map(([x, y]) => {
-        return [x, Math.abs(y - coordinate)]
-      })
-      return
-    }
-
+const foldByAxis = (direction: 'x' | 'y', coordinate: number, dots: number[][]) => {
+  if (direction === 'y') {
     dots = dots.map(([x, y]) => {
-      return [Math.abs(x - coordinate), y]
+      if (y < coordinate) return [x, y]
+
+      return [x, 2 * coordinate - y]
     })
+    return dots
+  }
+
+  dots = dots.map(([x, y]) => {
+    if (x < coordinate) return [x, y]
+
+    return [2 * coordinate - x, y]
   })
-  dots = dots.sort(([ax, ay], [bx, by]) => {
+  return dots
+}
+
+const fold = (direction: 'x' | 'y', coordinateString: string, dots: number[][]) => {
+  const coordinate = Number(coordinateString)
+  const folded = foldByAxis(direction, coordinate, dots)
+
+  const foldedDots = folded.sort(([ax, ay], [bx, by]) => {
     if (ax === bx) return ay - by
     return ax - bx
   })
-  dots = dots.map(dot => dot.join(','))
-  dots = dots.filter((dot, index) => dots.indexOf(dot) === index)
+  const clearedDots = foldedDots.map(dot => dot.join(',')).filter((dot, index, array) => array.indexOf(dot) === index)
 
-  return dots.length
+  return clearedDots.map(line => line.split(',').map(Number))
+}
+
+export const first = (inputString: string) => {
+  const [dotString, foldInstruction] = inputString.split('\n\n')
+  const dots = dotString.split('\n').map(line => line.split(',').map(Number))
+  const [firstFold] = foldInstruction.split('\n').map(line => line.replace('fold along ', '').split('='))
+
+  const foldedDots = fold(firstFold[0] as 'x' | 'y', firstFold[1], dots)
+
+  return foldedDots.length
 }
 
 export const second = (inputString: string) => {
-  const [dotString, foldInntruction] = inputString.split('\n\n')
-  let dots: any = dotString.split('\n').map(line => line.split(',').map(Number))
-
-
-  const folds = foldInntruction.split('\n').map(line => line.replace('fold along ', '').split('='))
+  const [dotString, foldInstruction] = inputString.split('\n\n')
+  let dots = dotString.split('\n').map(line => line.split(',').map(Number))
+  const folds = foldInstruction.split('\n').map(line => line.replace('fold along ', '').split('='))
 
   folds.forEach(([direction, coordinateString]) => {
-    const coordinate = Number(coordinateString)
-    if (direction === 'y') {
-      dots = dots.map(([x, y]) => {
-        return [x, Math.abs(y - coordinate)]
-      })
-      return
-    }
+    dots = fold(direction as 'x' | 'y', coordinateString, dots)
+  })
 
-    dots = dots.map(([x, y]) => {
-      return [Math.abs(x - coordinate), y]
-    })
-  })
-  dots = dots.sort(([ax, ay], [bx, by]) => {
-    if (ax === bx) return ay - by
-    return ax - bx
-  })
   const result = new Array(50).fill([]).map(() => new Array(50).fill(' '))
-  console.log(dots)
 
-  dots = dots.sort(([ax, ay], [bx, by]) => {
-    if (ax === bx) return ay - by
-    return ax - bx
-  })
   dots.forEach(([x, y]) => {
     result[y][x] = '#'
   });
-  console.log(result.map(line => line.join('')))
+  console.log(result.map(line => line.join('')).filter(line => line.trim().length))
 
-  return dots.length
+  return -1
 }
 
 export const tests: Test[] = [
@@ -93,7 +85,7 @@ fold along y=7
 fold along x=5`,
     results: {
       first: 17,
-      second: 0
+      second: -1
     },
   }];
 
