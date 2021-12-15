@@ -13,9 +13,6 @@ const getPath = (array: number[][]) => {
   const gScore = {}
   gScore[`0-0`] = 0
 
-  const fScore = {}
-  fScore[`0-0`] = calculateDistance(endX, 0, endY, 0)
-
   const cameFrom = {}
 
 
@@ -36,18 +33,17 @@ const getPath = (array: number[][]) => {
     ]
 
     neighbors.forEach(([newX, newY]) => {
-      if (!array[newY]?.[newX] || cameFrom[position]?.[0] === `${newX}-${newY}`) return
-
       const neighbor = `${newX}-${newY}`
-      const tentative_gScore = gScore[`${x}-${y}`] + array[newY][newX]
-      if (gScore[neighbor] && tentative_gScore >= gScore[neighbor]) return
+      if (!array[newY]?.[newX] || cameFrom[position]?.[0] === neighbor) return
+
+      const tentativeGScore = gScore[position] + array[newY][newX]
+      if (gScore[neighbor] && tentativeGScore >= gScore[neighbor]) return
 
       cameFrom[neighbor] = current
-      gScore[neighbor] = tentative_gScore
-      fScore[neighbor] = tentative_gScore + calculateDistance(endX, newX, endY, newY)
+      gScore[neighbor] = tentativeGScore
       if (openSet[neighbor]) return
 
-      openSet[neighbor] = fScore[neighbor]
+      openSet[neighbor] = tentativeGScore + calculateDistance(endX, newX, endY, newY)
 
     })
   }
