@@ -1,62 +1,62 @@
 import { Test } from '.';
 
-const calculateDistance = (endX: number, currentX: number, endY: number, currentY: number) => {
-  return endX - currentX + endY - currentY
-}
-
-const getPath = (array: number[][]) => {
-  const endX = array[0].length - 1
-  const endY = array.length - 1
-  const openSet = {}
-  openSet[`0-0`] = calculateDistance(endX, 0, endY, 0)
-
-  const gScore = {}
-  gScore[`0-0`] = 0
-
-  const cameFrom = {}
-
+const getPath = (array: Map<string, number>, target: string) => {
+  const openSet = { '0-0': true }
+  const score = { '0-0': 0 }
+  const visited = { '0-0': true }
 
   while (Object.values(openSet).length) {
-    const current = Object.entries<number>(openSet)
-      .sort(([, a]: [string, number], [, b]: [string, number]) => a - b).shift()
-    const [position] = current
-    const [x, y] = position.split('-').map(Number)
-    delete openSet[position]
+    let nextPosition = null
+    let minCost = Number.POSITIVE_INFINITY
+    Object.keys(openSet).forEach((pos) => {
+      if (score[pos] < minCost) {
+        minCost = score[pos]
+        nextPosition = pos
+      }
+    })
+    delete openSet[nextPosition]
 
-    if (x === endX && y === endY) return gScore[position]
+    if (nextPosition === target) return score[nextPosition]
 
+    const [x, y] = nextPosition.split('-').map(Number)
     const neighbors = [
-      [x, y - 1],
-      [x, y + 1],
-      [x - 1, y],
-      [x + 1, y]
+      `${x}-${y - 1}`,
+      `${x}-${y + 1}`,
+      `${x - 1}-${y}`,
+      `${x + 1}-${y}`
     ]
 
-    neighbors.forEach(([newX, newY]) => {
-      const neighbor = `${newX}-${newY}`
-      if (!array[newY]?.[newX] || cameFrom[position]?.[0] === neighbor) return
+    neighbors.forEach(neighbor => {
+      if (!array.has(neighbor) || visited[neighbor]) return
 
-      const tentativeGScore = gScore[position] + array[newY][newX]
-      if (gScore[neighbor] && tentativeGScore >= gScore[neighbor]) return
+      const newScore = score[nextPosition] + array.get(neighbor)
+      if (score[neighbor] && newScore > score[neighbor]) return
 
-      cameFrom[neighbor] = current
-      gScore[neighbor] = tentativeGScore
+      visited[neighbor] = true
+      score[neighbor] = newScore
       if (openSet[neighbor]) return
 
-      openSet[neighbor] = tentativeGScore + calculateDistance(endX, newX, endY, newY)
-
+      openSet[neighbor] = true
     })
   }
 }
 
 export const first = (inputString: string) => {
-  const array = inputString.split('\n').map(line => line.split('').map(Number))
+  const map = new Map()
+  let max = -1
+  inputString.split('\n').forEach((line, lineIndex) => {
+    max = lineIndex
+    line.split('').forEach((point, pointIndex) => {
+      map.set(`${lineIndex}-${pointIndex}`, Number(point))
+    })
+  })
 
-  return getPath(array)
+  return getPath(map, `${max}-${max}`)
 }
 
 export const second = (inputString: string) => {
-  const array = []
+  const map = new Map()
+  let max = -1
   const arrayOrig = inputString.split('\n').map(line => line.split('').map(Number))
   const yLength = arrayOrig.length
   const xLength = arrayOrig[0].length
@@ -64,15 +64,18 @@ export const second = (inputString: string) => {
     for (let x = 0; x < 5; x++) {
       arrayOrig.forEach((origLine, origY) => {
         origLine.forEach((origPoint, origX) => {
-          if (!array[yLength * y + origY]) array[yLength * y + origY] = []
-          array[yLength * y + origY][xLength * x + origX] =
+          max = yLength * y + origY
+          map.set(
+            `${yLength * y + origY}-${xLength * x + origX}`,
             (origPoint + y + x) % 9 === 0 ? 9 : (origPoint + y + x) % 9
+          )
         })
       })
     }
   }
+  const target = `${max}-${max}`
 
-  return getPath(array)
+  return getPath(map, target)
 }
 
 export const tests: Test[] = [
