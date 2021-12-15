@@ -1,20 +1,18 @@
+import BinaryHeapStrategy from "ts-priority-queue";
+
 import { Test } from '.';
 
 const getPath = (array: Map<string, number>, target: string) => {
-  const openSet = { '0-0': true }
+  const openSet = new BinaryHeapStrategy<{ cost: number, position: string }>({
+    comparator: ({ cost: aCost }, { cost: bCost }) => aCost - bCost
+  });
+  openSet.queue({ position: '0-0', cost: 0 })
+
   const score = { '0-0': 0 }
   const visited = { '0-0': true }
 
-  while (Object.values(openSet).length) {
-    let nextPosition = null
-    let minCost = Number.POSITIVE_INFINITY
-    Object.keys(openSet).forEach((pos) => {
-      if (score[pos] < minCost) {
-        minCost = score[pos]
-        nextPosition = pos
-      }
-    })
-    delete openSet[nextPosition]
+  while (openSet.length) {
+    const { position: nextPosition } = openSet.dequeue()
 
     if (nextPosition === target) return score[nextPosition]
 
@@ -34,9 +32,8 @@ const getPath = (array: Map<string, number>, target: string) => {
 
       visited[neighbor] = true
       score[neighbor] = newScore
-      if (openSet[neighbor]) return
 
-      openSet[neighbor] = true
+      openSet.queue({ position: neighbor, cost: newScore })
     })
   }
 }
