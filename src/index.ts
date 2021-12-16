@@ -15,7 +15,7 @@ const test = !args.find(arg => arg.startsWith('--skipTest'))
 const solveDay = ([regex, day]: [string, Day]) => {
   parts.forEach((part) => {
     if (test) day.tests.forEach((test, index) => {
-      if (!test.results[part]) return;
+      if (!test.results[part] && test.results[part] !== 0) return;
       const result = day[part](test.input);
 
       if (test.results[part] === result) {
