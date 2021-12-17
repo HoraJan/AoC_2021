@@ -9,7 +9,7 @@ const solve = (inputString: string) => {
   const minYSpeed = yMin
   const maxYSpeed = -yMin
 
-  const maxHeight = []
+  const maxHeight: number[] = []
 
   for (let x = minXSpeed; x <= maxXSpeed; x++) {
     for (let y = minYSpeed; y <= maxYSpeed; y++) {
@@ -38,7 +38,7 @@ const solve = (inputString: string) => {
   return maxHeight
 }
 
-export const first = (inputString: string) => solve(inputString).reduce((acc, curr) => Math.max(acc, curr), 0)
+export const first = (inputString: string) => Math.max(...solve(inputString))
 
 export const second = (inputString: string) => solve(inputString).length
 
