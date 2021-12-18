@@ -1,40 +1,38 @@
 import { Test } from '.';
 
-const flatten = (input: any, currentLevel: number) => {
-  let flatted = []
-  // console.log('i', input)
-  input.forEach((element) => {
-    if (!Array.isArray(element)) {
-      flatted.push({ level: currentLevel, element })
+type ArrayElement = ArrayElement[] | number
 
-      return
-    }
-
-    flatted = [...flatted, ...flatten(element, currentLevel + 1)]
-  })
-
-  return flatted
+type Flatted = {
+  level: number,
+  element: number
 }
 
-const reduce = (input: any[]) => {
-  const toReduce = input.findIndex((el, index, array) => {
-    // console.log(el, array[index + 1])
-    return el.level > 4 && array[index + 1]?.level === el.level
-  })
+const flat = (input: ArrayElement[], currentLevel: number): Flatted[] => input.flatMap((element) => {
+  if (!Array.isArray(element))
+    return { level: currentLevel, element }
 
-  if (toReduce > -1) {
-    const removed = input.splice(toReduce, 2, { level: input[toReduce].level - 1, element: 0, })
-    if (input[toReduce - 1]) input[toReduce - 1].element += removed[0].element
-    if (input[toReduce + 1]) input[toReduce + 1].element += removed[1].element
+  return flat(element, currentLevel + 1)
+})
+
+
+const reduce = (input: Flatted[]): Flatted[] => {
+  const indexToExplode = input.findIndex((el, index, array) =>
+    el.level > 4 && array[index + 1]?.level === el.level
+  )
+
+  if (indexToExplode > -1) {
+    const removed = input.splice(indexToExplode, 2, { level: input[indexToExplode].level - 1, element: 0, })
+    if (input[indexToExplode - 1]) input[indexToExplode - 1].element += removed[0].element
+    if (input[indexToExplode + 1]) input[indexToExplode + 1].element += removed[1].element
 
     return reduce(input)
   }
 
-  if (input.find(el => el.element > 9)) {
-    const findIndex = input.findIndex(el => el.element > 9)
-    input.splice(findIndex, 1,
-      { level: input[findIndex].level + 1, element: Math.floor(input[findIndex].element / 2), },
-      { level: input[findIndex].level + 1, element: Math.ceil(input[findIndex].element / 2), })
+  const indexToSplit = input.findIndex(el => el.element > 9)
+  if (indexToSplit > -1) {
+    input.splice(indexToSplit, 1,
+      { level: input[indexToSplit].level + 1, element: Math.floor(input[indexToSplit].element / 2), },
+      { level: input[indexToSplit].level + 1, element: Math.ceil(input[indexToSplit].element / 2), })
 
     return reduce(input)
   }
@@ -42,13 +40,15 @@ const reduce = (input: any[]) => {
   return input
 }
 
-const calculate = (input: any[]) => {
-  const toSum = input.findIndex((el, index) => el.level === input[index + 1]?.level)
-  if (toSum > -1) {
-    input.splice(toSum, 2, { level: input[toSum].level - 1, element: input[toSum].element * 3 + input[toSum + 1].element * 2 })
+const calculate = (input: Flatted[]): Flatted[] => {
+  const indexToSum = input.findIndex((el, index) => el.level === input[index + 1]?.level)
+  if (indexToSum > -1) {
+    input.splice(indexToSum, 2, {
+      level: input[indexToSum].level - 1,
+      element: input[indexToSum].element * 3 + input[indexToSum + 1].element * 2
+    })
 
     return calculate(input)
-
   }
 
   return input
@@ -56,31 +56,23 @@ const calculate = (input: any[]) => {
 
 export const first = (inputString: string) => {
   const lines = inputString.split('\n').map(line => JSON.parse(line))
-  // console.log('l', lines)
-  const firstFlatten = flatten([lines[0]], 0)
-  const added = lines.reduce((acc, curr, index) => {
-    // console.log(index, acc)
-    if (!index) {
+  const addedLines = lines.reduce<Flatted[]>((acc, curr, index) => {
+    if (!index) return flat([curr], 0)
 
-      return acc
-    }
+    return reduce([
+      ...acc.map(el => ({ ...el, level: el.level + 1 })),
+      ...flat([curr], 1)
+    ])
+  }, [])
 
-    const result = flatten([curr], 1)
-    // console.log('r', result)
-
-    const reduced = reduce([...acc.map(el => ({ ...el, level: el.level + 1 })), ...result])
-    return reduced
-  }, firstFlatten)
-  // console.log('a', added)
-
-  const [calculated] = calculate(added)
-  // console.log(calculated)
+  const [calculated] = calculate(addedLines)
 
   return calculated.element
 }
 
 export const second = (inputString: string) => {
   const lines = inputString.split('\n').map(line => JSON.parse(line))
+  const flattedLines = lines.map(line => flat([line], 1))
 
   let maxMagnitude = 0
 
@@ -88,16 +80,12 @@ export const second = (inputString: string) => {
     for (let second = 0; second < lines.length; second++) {
       if (first === second) continue
 
-      const firstFlatten = flatten([lines[first]], 1)
-      const secondFlatten = flatten([lines[second]], 1)
-
-      const reduced = reduce([...firstFlatten, ...secondFlatten])
+      const reduced = reduce([
+        ...flattedLines[first].map(line => ({ ...line })),
+        ...flattedLines[second].map(line => ({ ...line }))
+      ])
       const [calculated] = calculate(reduced)
-      if (calculated.element > maxMagnitude) {
-        maxMagnitude = calculated.element
-        console.log(first, second, firstFlatten, secondFlatten, reduced)
-
-      }
+      if (calculated.element > maxMagnitude) maxMagnitude = calculated.element
     }
   }
 
