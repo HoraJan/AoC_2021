@@ -15,6 +15,7 @@ export * as day14 from './14';
 export * as day15 from './15';
 export * as day16 from './16';
 export * as day17 from './17';
+export * as day18 from './18';
 
 export interface Test {
     input: string
