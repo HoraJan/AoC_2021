@@ -1,13 +1,12 @@
-import { Test } from '.';
 import { performance } from 'perf_hooks';
-import { arrayBuffer } from 'stream/consumers';
 
+import { Test } from '.';
 
 interface Reading {
-  reading: number[];
   diff: number[];
-  diffTo: number[];
-  scanner: number;
+  reading?: number[];
+  readingIndex: number;
+  scannerIndex: number;
 }
 
 interface Scanner {
@@ -16,34 +15,58 @@ interface Scanner {
   x: number
   y: number
   z: number
+  diffs: Reading[]
+  scannerIndex: number
+  possiblePairedScanners: number[]
 }
 
-const sameTriple = ([firstX, firstY, firstZ]: number[], second: number[]) => {
-  return (second.includes(firstX) || second.includes(-firstX)) &&
-    (second.includes(firstY) || second.includes(-firstY)) &&
-    (second.includes(firstZ) || second.includes(-firstZ))
+interface Position {
+  firstDiff: number
+  secondDiff: number
+  thirdDiff: number
+  firstIndex: number
+  secondIndex: number
+  thirdIndex: number
+  firstPositive: number
+  secondPositive: number
+  thirdPositive: number
 }
+
+const sameTriple = (first: number[], second: number[]) =>
+  first.every(axis => second.includes(axis) || second.includes(-axis))
+
+const countManhattanDistance = (a: Scanner, b: Scanner) =>
+  Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.z - b.z)
+
+const mergeScans = (scanners: Scanner[]) => scanners
+  .flatMap(scanner => scanner.scanner)
+  .filter((reading, index, array) =>
+    index === array.findIndex(inner => inner.every((value, index) => value === reading[index]))
+  )
 
 const getDiff = (firstReading: Reading, secondReading: Reading) => {
-  const firstIndex = secondReading.diff.findIndex(i => Math.abs(i) === Math.abs(firstReading.diff[0]))
-  const secondIndex = secondReading.diff.findIndex(i => Math.abs(i) === Math.abs(firstReading.diff[1]))
-  const thirdIndex = secondReading.diff.findIndex(i => Math.abs(i) === Math.abs(firstReading.diff[2]))
+  const [firstIndex, secondIndex, thirdIndex] = firstReading.diff.map(diff =>
+    secondReading.diff.findIndex(i => Math.abs(i) === Math.abs(diff)))
 
-  const firstDiff =
-    secondReading.diff[firstIndex] === firstReading.diff[0] ?
-      firstReading.reading[0] - secondReading.reading[firstIndex] :
-      firstReading.reading[0] + secondReading.reading[firstIndex]
+  const [firstDiff, secondDiff, thirdDiff] = [firstIndex, secondIndex, thirdIndex]
+    .map((diffIndex, index) => secondReading.diff[diffIndex] === firstReading.diff[index] ?
+      firstReading.reading[index] - secondReading.reading[diffIndex] :
+      firstReading.reading[index] + secondReading.reading[diffIndex])
 
-  const secondDiff =
-    secondReading.diff[secondIndex] === firstReading.diff[1] ?
-      firstReading.reading[1] - secondReading.reading[secondIndex] :
-      firstReading.reading[1] + secondReading.reading[secondIndex]
+  const [firstPositive, secondPositive, thirdPositive] = [firstIndex, secondIndex, thirdIndex]
+    .map((diffIndex, index) => secondReading.diff[diffIndex] === firstReading.diff[index] ? -1 : 1)
 
-  const thirdDiff =
-    secondReading.diff[thirdIndex] === firstReading.diff[2] ?
-      firstReading.reading[2] - secondReading.reading[thirdIndex] :
-      firstReading.reading[2] + secondReading.reading[thirdIndex]
-
+  console.log(firstReading, secondReading, {
+    firstDiff,
+    secondDiff,
+    thirdDiff,
+    firstIndex,
+    secondIndex,
+    thirdIndex,
+    firstPositive,
+    secondPositive,
+    thirdPositive
+  })
   return {
     firstDiff,
     secondDiff,
@@ -51,98 +74,106 @@ const getDiff = (firstReading: Reading, secondReading: Reading) => {
     firstIndex,
     secondIndex,
     thirdIndex,
-    firstPositive: secondReading.diff[firstIndex] === firstReading.diff[0] ? -1 : 1,
-    secondPositive: secondReading.diff[secondIndex] === firstReading.diff[1] ? -1 : 1,
-    thirdPositive: secondReading.diff[thirdIndex] === firstReading.diff[2] ? -1 : 1
+    firstPositive,
+    secondPositive,
+    thirdPositive
   }
 }
 
 const getPairOfScanners = (firstScanner: Scanner, scanners: Scanner[]) => {
-  // const firstScanner = scanners[0]
-  let i = 0
-  while (i < scanners.length) {
-
-    // const startTime = performance.now()
-
-    const secondScanner = scanners[i]
-    if (firstScanner === secondScanner || secondScanner.final) {
-      i++
+  let secondIndex = 0
+  const startTime = performance.now()
+  while (secondIndex < scanners.length) {
+    const secondScanner = scanners[secondIndex]
+    if (firstScanner === secondScanner || secondScanner.final || !secondScanner.possiblePairedScanners.includes(firstScanner.scannerIndex)) {
+      secondIndex++
       continue
     }
 
-    const diffs = [firstScanner, secondScanner].map((scanner, index, array) => {
-      return {
-        index,
-        readings: scanner.scanner
-          .map(reading =>
-          ({
-            reading,
-            diffs: array[index].scanner
-              .map(nextReading => ({
-                diffTo: nextReading,
-                diff: nextReading
-                  .map((value, index) => value - reading[index])
-              })).filter(({ diff: [x, y, z] }) => x && y && z)
 
-          }))
-      }
-    })
-    // console.log(performance.now() - startTime)
+    const firstMatch = []
+    const filteredSeconds = {}
+    const secondOverlap = secondScanner.diffs.filter((reading) => {
+      // if (filteredSeconds[reading.readingIndex]) return
 
-    const flatted = diffs.flatMap(({ readings, index }) =>
-      readings.flatMap(({ reading, diffs }) => diffs.map(diff => ({ reading, diff: diff.diff, diffTo: diff.diffTo, scanner: index }))))
-    // console.log(performance.now() - startTime)
+      const innerFirstMatch = firstScanner.diffs.filter(({ diff: secondDiff }) =>
+        sameTriple(reading.diff, secondDiff))
 
-    const overlap = flatted.filter(({ reading, diff, scanner: firstScanner }, _, array) => {
-      const secondReading = array.find(({ diff: secondDiff, diffTo, scanner: secondScanner }) => reading !== diffTo && firstScanner !== secondScanner && sameTriple(diff, secondDiff))
-      // const response = secondReading && reading !== secondReading.diffTo
+      if (!innerFirstMatch.length) return false
 
-      return !!secondReading
-    })
-    // console.log(performance.now() - startTime)
-    // console.log(performance.now() - startTime)
+      firstMatch.push(
+        getDiff(
+          {
+            ...innerFirstMatch[0],
+            reading: firstScanner.scanner[innerFirstMatch[0].readingIndex]
+          },
+          {
+            ...reading,
+            reading: secondScanner.scanner[reading.readingIndex]
+          },
+        )
+      )
+      firstMatch.push(
+        getDiff(
+          {
+            ...innerFirstMatch[1],
+            reading: firstScanner.scanner[innerFirstMatch[1].readingIndex]
+          },
+          {
+            ...reading,
+            reading: secondScanner.scanner[reading.readingIndex]
+          },
+        )
+      )
+      filteredSeconds[reading.readingIndex] = true
+      return true
+    }
+    )
+    console.log(secondScanner.scannerIndex, secondScanner.scanner.length, secondScanner.diffs.length, secondOverlap.length)
+    const filtered = secondOverlap.filter((el, ind, array) => array.findIndex(newEl => newEl.readingIndex === el.readingIndex) === ind)
+    console.log(filteredSeconds, Object.keys(filteredSeconds).length, filtered.length)
 
-    // console.log(flatted.find(a => a.reading[0] === -485 && a.diff.diff[0] === 944))
-    const filtered = overlap.filter((el, ind, array) => array.findIndex(newEl => newEl.reading === el.reading) === ind)
-    // console.log(overlap)
-    // console.log(filtered.length)
-    // console.log(performance.now() - startTime)
+    // if (Object.keys(filteredSeconds).length > 11) {
+    if (filtered.length > 11) {
+      const position = findRepeatingReading(firstMatch)
+      if (position) console.log(position)
+      return { position, secondIndex }
+    }
 
-    if (filtered.length > 23) return { overlap, secondScanner, secondIndex: i }
+    secondScanner.possiblePairedScanners = secondScanner.possiblePairedScanners.filter(i => i !== firstScanner.scannerIndex)
+    firstScanner.possiblePairedScanners = firstScanner.possiblePairedScanners.filter(i => i !== secondScanner.scannerIndex)
 
-    i++
+    secondIndex++
   }
 }
 
-const recalculate = (overlap: Reading[], secondScanner: Scanner) => {
-  const pairs = overlap.slice(0, 2).flatMap(first => {
-    const second = overlap.filter(reading => {
-      // console.log(reading.reading, reading.diffTo, reading.diff, first.diff)
-      if (reading.scanner === first.scanner) return false
-
-      return sameTriple(reading.diff, first.diff)
-
-    })
-    return second
-  })
-
+const findRepeatingReading = (pairs: Position[]): Position => {
   const readings = {}
-  pairs.forEach((pair, index) => readings[pair.reading.join(';')] ? readings[pair.reading.join(';')] = [...readings[pair.reading.join(';')], index] : readings[pair.reading.join(';')] = [index])
-  // console.log(pairs[0].reading === pairs[2].reading, pairs[1].reading === pairs[3].reading)
-  // console.log(readings)
-  // console.log(pairs, overlap[0])
-  const [index] = Object.values<number[]>(readings).find(arr => arr.length > 1)
-  // if (pairs[0].reading === pairs[2].reading) {
-  //   index = 0
-  // }
-  const position = getDiff(overlap[0], pairs[index])
-  // console.log(position)
-  // console.log(position)
+  for (let i = 0; i < pairs.length; i++) {
+    const coordinatesString = JSON.stringify(pairs[i])
+    if (readings[coordinatesString] > -1) {
+      return pairs[readings[coordinatesString]]
+    }
+    readings[coordinatesString] = i
+  }
+}
+
+const recalculate = (position: Position, secondScanner: Scanner) => {
   secondScanner.x = position.firstDiff
   secondScanner.y = position.secondDiff
   secondScanner.z = position.thirdDiff
-
-  return secondScanner.scanner.map((reading) => {
+  secondScanner.final = true
+  secondScanner.diffs = secondScanner.diffs.map(diff => {
+    return {
+      ...diff,
+      diff: [
+        diff.diff[position.firstIndex] * -1 * position.firstPositive,
+        diff.diff[position.secondIndex] * -1 * position.secondPositive,
+        diff.diff[position.thirdIndex] * -1 * position.thirdPositive,
+      ]
+    }
+  })
+  secondScanner.scanner = secondScanner.scanner.map((reading) => {
     const first = position.firstDiff - position.firstPositive * reading[position.firstIndex]
     const second = position.secondDiff - position.secondPositive * reading[position.secondIndex]
     const third = position.thirdDiff - position.thirdPositive * reading[position.thirdIndex]
@@ -150,83 +181,64 @@ const recalculate = (overlap: Reading[], secondScanner: Scanner) => {
   })
 }
 
-const mergeScans = (scanners: Scanner[]) => {
-  // let [first] = scanners
-  return scanners
-    .flatMap(scanner => scanner.scanner)
-    .filter((reading, index, array) => array.findIndex(inner => inner[0] === reading[0] && inner[1] === reading[1] && inner[2] === reading[2]) === index)
-  // return scanners.filter(scanner => scanner !== secondScanner)
-}
-
 const solve = (inputString: string) => {
-  const scanners = inputString
+  const scanners: Scanner[] = inputString
     .split('\n').map(line => line.trim()).join('\n')
     .split('\n\n')
     .map(scanner => scanner
       .split('\n')
       .filter((l, i) => i > 0)
       .map(line => line.trim().split(',').map(Number)))
-    .map(scanner => ({ final: false, scanner, x: 0, y: 0, z: 0 }))
+    .map((scanner, scannerIndex, array) => ({
+      final: false,
+      scanner,
+      scannerIndex,
+      possiblePairedScanners: new Array(array.length).fill(0).map((_, ind) => ind),
+      x: 0,
+      y: 0,
+      z: 0,
+      diffs: scanner
+        .flatMap((reading, readingIndex) =>
+          scanner
+            .map((nextReading) => ({
+              readingIndex,
+              diff: nextReading
+                .map((value, index) => value - reading[index]),
+              scannerIndex
+            }))
+            .filter(({ diff: [x, y, z] }) => x || y || z)
+        )
+    }))
 
-  // const connections = {}
-  // for (let i = 1; i < scanners.length; i++) {
-  //   connections[i] = getPairOfScanners(scanners[i], scanners).secondIndex
-  // }
-  // console.log(connections)
   scanners[0].final = true
   const toCheck = [0]
 
   while (toCheck.length > 0) {
-    // const startTime = performance.now()
-    // console.log(scanners.length, scanners[0].length)
     const performedIndex = toCheck.shift()
-    let con = !!scanners.find(scanner => !scanner.final)
-    // console.log(performedIndex, con, toCheck)
-    while (con) {
+
+    while (scanners.find(scanner => !scanner.final)) {
       const result = getPairOfScanners(scanners[performedIndex], scanners)
-      if (!result) {
-        con = false
-        break
-      }
-      const { overlap, secondScanner, secondIndex } = result
-      // console.log(secondIndex)
+      if (!result) break
+
+      const { position, secondIndex } = result
       toCheck.push(secondIndex)
-      const recalculatedCoords = recalculate(overlap, secondScanner)
-      // if (secondIndex === 2) console.log(overlap)
-      scanners[secondIndex].scanner = recalculatedCoords
-      scanners[secondIndex].final = true
+      recalculate(position, scanners[secondIndex])
     }
-
-
-    // console.log(performance.now() - startTime)
   }
-  // scanners = 
+
   return scanners
-  // console.log(scanners.map(sc => sc.scanner))
-  // console.log(mergedScanners)
 }
 
-export const first = (inputString: string) => {
-  const mergedScanners = mergeScans(solve(inputString)).sort((a, b) => a[0] - b[0])
+export const first = (inputString: string) =>
+  mergeScans(solve(inputString)).length - 1
 
-  return mergedScanners.length
-}
+export const second = (inputString: string) =>
+  solve(inputString).reduce((acc, curr, index, array) =>
+    Math.max(acc, array.slice(index + 1).reduce((accc, currr) =>
+      Math.max(accc, countManhattanDistance(curr, currr))
+      , acc))
+    , 0)
 
-export const second = (inputString: string) => {
-  const mergedScanners = solve(inputString)
-  console.log(mergedScanners)
-  let max = 0
-
-  for (let i = 0; i < mergedScanners.length; i++) {
-    for (let j = i + 1; j < mergedScanners.length; j++) {
-      max = Math.max(max, Math.abs(mergedScanners[i].x - mergedScanners[j].x) +
-        Math.abs(mergedScanners[i].y - mergedScanners[j].y) +
-        Math.abs(mergedScanners[i].z - mergedScanners[j].z))
-    }
-  }
-
-  return max
-}
 
 export const tests: Test[] = [
   {
