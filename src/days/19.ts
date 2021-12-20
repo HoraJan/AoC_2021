@@ -1,4 +1,4 @@
-import { performance } from 'perf_hooks';
+// import { performance } from 'perf_hooks';
 
 import { Test } from '.';
 
@@ -56,17 +56,6 @@ const getDiff = (firstReading: Reading, secondReading: Reading) => {
   const [firstPositive, secondPositive, thirdPositive] = [firstIndex, secondIndex, thirdIndex]
     .map((diffIndex, index) => secondReading.diff[diffIndex] === firstReading.diff[index] ? -1 : 1)
 
-  console.log(firstReading, secondReading, {
-    firstDiff,
-    secondDiff,
-    thirdDiff,
-    firstIndex,
-    secondIndex,
-    thirdIndex,
-    firstPositive,
-    secondPositive,
-    thirdPositive
-  })
   return {
     firstDiff,
     secondDiff,
@@ -82,7 +71,6 @@ const getDiff = (firstReading: Reading, secondReading: Reading) => {
 
 const getPairOfScanners = (firstScanner: Scanner, scanners: Scanner[]) => {
   let secondIndex = 0
-  const startTime = performance.now()
   while (secondIndex < scanners.length) {
     const secondScanner = scanners[secondIndex]
     if (firstScanner === secondScanner || secondScanner.final || !secondScanner.possiblePairedScanners.includes(firstScanner.scannerIndex)) {
@@ -90,53 +78,37 @@ const getPairOfScanners = (firstScanner: Scanner, scanners: Scanner[]) => {
       continue
     }
 
-
     const firstMatch = []
     const filteredSeconds = {}
-    const secondOverlap = secondScanner.diffs.filter((reading) => {
-      // if (filteredSeconds[reading.readingIndex]) return
-
+    const toContinue = secondScanner.diffs.find((reading) => {
       const innerFirstMatch = firstScanner.diffs.filter(({ diff: secondDiff }) =>
         sameTriple(reading.diff, secondDiff))
 
       if (!innerFirstMatch.length) return false
 
-      firstMatch.push(
-        getDiff(
-          {
-            ...innerFirstMatch[0],
-            reading: firstScanner.scanner[innerFirstMatch[0].readingIndex]
-          },
-          {
-            ...reading,
-            reading: secondScanner.scanner[reading.readingIndex]
-          },
-        )
+      innerFirstMatch.forEach(match =>
+        firstMatch.push(match, reading)
       )
-      firstMatch.push(
-        getDiff(
-          {
-            ...innerFirstMatch[1],
-            reading: firstScanner.scanner[innerFirstMatch[1].readingIndex]
-          },
-          {
-            ...reading,
-            reading: secondScanner.scanner[reading.readingIndex]
-          },
-        )
-      )
-      filteredSeconds[reading.readingIndex] = true
-      return true
-    }
-    )
-    console.log(secondScanner.scannerIndex, secondScanner.scanner.length, secondScanner.diffs.length, secondOverlap.length)
-    const filtered = secondOverlap.filter((el, ind, array) => array.findIndex(newEl => newEl.readingIndex === el.readingIndex) === ind)
-    console.log(filteredSeconds, Object.keys(filteredSeconds).length, filtered.length)
+      if (!filteredSeconds[reading.readingIndex]) filteredSeconds[reading.readingIndex] = 0
+      filteredSeconds[reading.readingIndex] += innerFirstMatch.length
+      if (filteredSeconds[reading.readingIndex] === 22) return true
+    })
 
-    // if (Object.keys(filteredSeconds).length > 11) {
-    if (filtered.length > 11) {
-      const position = findRepeatingReading(firstMatch)
-      if (position) console.log(position)
+    if (toContinue) {
+      const toCheck = []
+      for (let i = 0; i < 4; i++) {
+        toCheck.push(getDiff(
+          {
+            ...firstMatch[2 * i],
+            reading: scanners[firstMatch[2 * i].scannerIndex].scanner[firstMatch[2 * i].readingIndex]
+          },
+          {
+            ...firstMatch[2 * i + 1],
+            reading: scanners[firstMatch[2 * i + 1].scannerIndex].scanner[firstMatch[2 * i + 1].readingIndex]
+          }
+        ))
+      }
+      const position = findRepeatingReading(toCheck)
       return { position, secondIndex }
     }
 
@@ -230,7 +202,7 @@ const solve = (inputString: string) => {
 }
 
 export const first = (inputString: string) =>
-  mergeScans(solve(inputString)).length - 1
+  mergeScans(solve(inputString)).length
 
 export const second = (inputString: string) =>
   solve(inputString).reduce((acc, curr, index, array) =>
