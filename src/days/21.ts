@@ -7,15 +7,8 @@ interface State {
   dice: number
   scores: number[]
   rolls: number
-  // predecessors: CountObject[]
-  // ancesstors?: string[]
   count: number
 }
-
-// interface CountObject {
-//   count: number
-// }
-
 
 const turn = (state: State, roll: number, diceSides: number) => {
   state.rolls += 3
@@ -29,15 +22,6 @@ const turn = (state: State, roll: number, diceSides: number) => {
 
 const parsePLayers = (inputString: string) => inputString.split('\n').map(player => Number(player.split(': ')[1]))
 
-// const countPredecessors = (state: State, tree: { [key: string]: State }) => {
-//   if (state.predecessors.length) {
-//     // console.log(state)
-//     return state.predecessors.reduce((acc, key) => acc + countPredecessors(tree[key], tree), 0)
-//   }
-
-//   return state.count
-// }
-
 const solve = (inputString: string, maxScore: number, diceSides: number, possibleRolls: (state: State) => number[]) => {
   const state = {
     playersPositions: [...parsePLayers(inputString)],
@@ -46,8 +30,6 @@ const solve = (inputString: string, maxScore: number, diceSides: number, possibl
     scores: [0, 0],
     rolls: 0,
     count: 1,
-    // ancesstors: [],
-    // predecessors: []
   }
   const stateString = `${state.playersPositions.join('-')};${state.playerToRoll};${state.scores.join('-')}`
 
@@ -62,50 +44,36 @@ const solve = (inputString: string, maxScore: number, diceSides: number, possibl
 
   statesToSolve.queue(state)
 
-  // const statesToSolve = [state]
   const tree = { [stateString]: state }
   const wonStates = []
 
-  // let i = 0
   while (statesToSolve.length) {
-    // i++
-    // if (i % 10000 === 0) console.log(i, statesToSolve.length, wonStates.length)
-    // console.log(statesToSolve.length)
     const state = statesToSolve.dequeue()
-
-    // const state = statesToSolve.shift()
-    // const stateString = `${state.playersPositions.join('-')};${state.playerToRoll};${state.scores.join('-')}`
-
-    // 20-20;0;1-2
     const rolls = possibleRolls(state)
     const newStates = rolls.map(roll =>
       turn({
         ...state,
         scores: [...state.scores],
         playersPositions: [...state.playersPositions],
-        // predecessors: [...state.predecessors]
       }, roll, diceSides))
 
     newStates.forEach(newState => {
       const newStateString = `${newState.playersPositions.join('-')};${newState.playerToRoll};${newState.scores.join('-')}`
-      // state.ancesstors.push(stateString)
       if (newState.scores.find(score => score >= maxScore)) {
         wonStates.push(newState)
         return
       }
+
       if (!tree[newStateString]) {
-        // statesToSolve.push(newState)
         statesToSolve.queue(newState)
         tree[newStateString] = newState
-        // tree[stateString].count *= newState.count
         return
       }
 
       tree[newStateString].count += newState.count
-      // tree[newStateString].predecessors.push(stateString)
     })
   }
-  console.log(wonStates.length)
+
   return { wonStates, tree }
 }
 
@@ -117,24 +85,21 @@ export const first = (inputString: string) => {
 }
 
 export const second = (inputString: string) => {
+  const rolls = () => [
+    3, 4, 5, 4, 5, 6, 5, 6,
+    7, 4, 5, 6, 5, 6, 7, 6,
+    7, 8, 5, 6, 7, 6, 7, 8,
+    7, 8, 9
+  ]
 
+  const { wonStates } = solve(inputString, 21, 3, rolls)
+  let firstCount = 0
+  let secondCount = 0
 
-  const rolls = () => {
-    const rolls = []
-    for (let i = 0; i < 27; i++) {
-      const sum = i.toString(3).padStart(3, '0').split('').reduce((acc, curr) => acc + Number(curr), 0) + 3
-      rolls.push(sum)
-    }
-
-    return rolls
-  }
-  const { wonStates, tree } = solve(inputString, 21, 3, rolls)
-
-  const firstCount = wonStates.reduce((acc, curr) => acc + (curr.scores[0] > curr.scores[1] ? curr.count : 0), 0)
-  const secondCount = wonStates.reduce((acc, curr) => acc + (curr.scores[1] > curr.scores[0] ? curr.count : 0), 0)
-  console.log(firstCount, secondCount)
-
-  // countPredecessors(wonStates[0], tree)
+  wonStates.forEach(curr => {
+    if (curr.scores[0] > curr.scores[1]) return firstCount += curr.count
+    secondCount += curr.count
+  })
 
   return Math.max(firstCount, secondCount)
 }
