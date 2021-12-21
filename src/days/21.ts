@@ -4,15 +4,13 @@ import { Test } from '.';
 interface State {
   playersPositions: number[]
   playerToRoll: number
-  dice: number
+  dice?: number
   scores: number[]
-  rolls: number
+  rolls?: number
   count: number
 }
 
-const turn = (state: State, roll: number, diceSides: number) => {
-  state.rolls += 3
-  state.dice = (state.dice + 3 - 1) % diceSides + 1
+const turn = (state: State, roll: number) => {
   state.playersPositions[state.playerToRoll] = (state.playersPositions[state.playerToRoll] + roll - 1) % 10 + 1
   state.scores[state.playerToRoll] += state.playersPositions[state.playerToRoll]
   state.playerToRoll = state.playerToRoll === 0 ? 1 : 0
@@ -22,7 +20,7 @@ const turn = (state: State, roll: number, diceSides: number) => {
 
 const parsePLayers = (inputString: string) => inputString.split('\n').map(player => Number(player.split(': ')[1]))
 
-const solve = (inputString: string, maxScore: number, diceSides: number, possibleRolls: (state: State) => number[]) => {
+const solve = (inputString: string, maxScore: number, possibleRolls: (state: State) => number[]) => {
   const state = {
     playersPositions: [...parsePLayers(inputString)],
     playerToRoll: 0,
@@ -44,7 +42,7 @@ const solve = (inputString: string, maxScore: number, diceSides: number, possibl
 
   statesToSolve.queue(state)
 
-  const tree = { [stateString]: state }
+  const tree: { [key: string]: State } = { [stateString]: state }
   const wonStates = []
 
   while (statesToSolve.length) {
@@ -55,7 +53,7 @@ const solve = (inputString: string, maxScore: number, diceSides: number, possibl
         ...state,
         scores: [...state.scores],
         playersPositions: [...state.playersPositions],
-      }, roll, diceSides))
+      }, roll))
 
     newStates.forEach(newState => {
       const newStateString = `${newState.playersPositions.join('-')};${newState.playerToRoll};${newState.scores.join('-')}`
@@ -78,8 +76,13 @@ const solve = (inputString: string, maxScore: number, diceSides: number, possibl
 }
 
 export const first = (inputString: string) => {
-  const rolls = (state: State) => [state.dice + (state.dice + 1 - 1) % 100 + 1 + (state.dice + 2 - 1) % 100 + 1]
-  const { wonStates } = solve(inputString, 1000, 100, rolls)
+  const rolls = (state: State) => {
+    state.rolls += 3
+    const rolls = [state.dice + (state.dice + 1 - 1) % 100 + 1 + (state.dice + 2 - 1) % 100 + 1]
+    state.dice = (state.dice + 3 - 1) % 100 + 1
+    return rolls
+  }
+  const { wonStates } = solve(inputString, 1000, rolls)
 
   return Math.min(...wonStates[0].scores) * wonStates[0].rolls
 }
@@ -92,7 +95,7 @@ export const second = (inputString: string) => {
     7, 8, 9
   ]
 
-  const { wonStates } = solve(inputString, 21, 3, rolls)
+  const { wonStates } = solve(inputString, 21, rolls)
   let firstCount = 0
   let secondCount = 0
 
