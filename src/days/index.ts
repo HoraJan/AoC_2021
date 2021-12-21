@@ -18,6 +18,7 @@ export * as day17 from './17';
 export * as day18 from './18';
 export * as day19 from './19';
 export * as day20 from './20';
+export * as day21 from './21';
 
 export interface Test {
     input: string
